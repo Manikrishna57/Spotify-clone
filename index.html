@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon" href="./assets/logo.png">
+    <title>Spotify - Web player: Music for every one</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="main">
+        <div class="sidebar">
+            <div class="nav">
+               <div class="nav-option" id="homeBtn">
+    <i class="fa-solid fa-house"></i>
+    <a href="javascript:void(0)">Home</a>
+</div>
+                <div class="nav-option" id="searchNav">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <a href="#">Search</a>
+                </div>
+            </div>
+            <div class="library">
+
+    <div class="options">
+
+        <div class="lib-option nav-option" id="libraryBtn">
+            <img src="./assets/library_icon.png">
+            <a href="javascript:void(0)">Library</a>
+        </div>
+
+        <div class="icons">
+            <i class="fa-solid fa-plus"></i>
+            <i class="fa-solid fa-angle-right"></i>
+        </div>
+
+    </div>
+
+
+<div class="lib-box" id="playlistContainer">
+
+    <div class="box" id="createPlaylistBox">
+        <p class="box-p1">Create your first playlist</p>
+        <p class="box-p2">It's easy, we'll help you</p>
+
+        <button class="badge" id="createPlaylistBtn">
+            Create playlist
+        </button>
+    </div>
+
+    <div class="box">
+        <p class="box-p1">Let's find some podcasts to follow</p>
+        <p class="box-p2">
+            We will keep you updated on new episodes
+        </p>
+
+        <button class="badge">
+            Browse Podcasts
+        </button>
+    </div>
+
+    <div id="dynamicPlaylists"></div>
+
+</div>
+
+</div>
+    </div>
+    <div class="main-content">
+
+    <div class="sticky-nav">
+        <div class="sticky-nav-icons">
+            <img src="./assets/backward_icon.png">
+            <img src="./assets/forward_icon.png" class="hide">
+        </div>
+
+        <div class="sticky-nav-options">
+            <button class="badge nav-item">
+                Explore premium
+            </button>
+
+            <button class="badge nav-item dark-badge">
+                <i class="fa-regular fa-cloud-arrow-down"
+                   style="margin-right: 5px;">
+                </i>
+                Install app
+            </button>
+
+            <span id="welcomeUser"></span>
+
+            <button id="logoutBtn" class="badge nav-item">
+                Logout
+            </button>
+
+            <i class="fa-regular fa-user nav-item"
+               id="userIcon">
+            </i>
+        </div>
+    </div>
+
+
+    <!-- HOME CONTENT -->
+    <div id="homeContent">
+
+        <h2>Recently played</h2>
+
+        <div class="cards-container"
+             id="recentSongsContainer">
+        </div>
+
+
+        <h2>Trending Now near you</h2>
+
+        <div class="cards-container"
+             id="trendingSongsContainer">
+        </div>
+
+
+        <h2>Featured Charts</h2>
+
+        <div class="cards-container"
+             id="featuredSongsContainer">
+        </div>
+
+
+        <div class="footer">
+            <div class="line"></div>
+        </div>
+
+    </div>
+
+
+    <!-- PLAYLIST CONTENT -->
+    <div id="playlistSongsContainer"></div>
+
+</div>
+        <div class="music-player">
+            <audio id="audioPlayer"></audio>
+            <div class="album"></div>
+            
+            <div class="player">
+                <div class="player-controls">
+                    <img src="./assets/player_icon1.png" class="player-control-icon" id="previousBtn">
+
+                    <img src="./assets/player_icon2.png" class="player-control-icon" id="rewindBtn">
+
+                    <img src="./assets/player_icon3.png" class="player-control-icon" id="playBtn" style="opacity:1;height: 2rem;">
+
+                    <img src="./assets/player_icon4.png" class="player-control-icon" id="forwardBtn">
+
+                    <img src="./assets/player_icon5.png" class="player-control-icon" id="nextBtn">
+
+                    <button id="repeatBtn" class="repeat-btn" title="Repeat">
+                        ↻
+                    </button>
+                    <button
+                        id="likeBtn"
+                        class="like-btn"
+                        title="Like">
+                        ♡
+                    </button>
+                </div>
+                
+                <div class="playback-bar">
+                   <span class="curr-time" id="currentTime">00:00</span>
+                    <input type="range" min="0" max="100" value="0" class="progress-bar" id="progressBar" step="1">   
+                    <span class="tot-time" id="totalTime">00:00</span>
+                </div>
+            </div>
+            <div class="control">
+
+                <button
+                     id="queueBtn"
+                    class="queue-btn"
+                    title="Queue">
+                        ☰
+                </button>
+
+                <i class="fa-solid fa-volume-high"></i>
+
+                <input
+                    type="range"
+                    id="volumeBar"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="1">
+            </div>
+        </div>
+            
+
+    </div>
+    <!-- ============================= -->
+<!-- AUTH MODAL -->
+<!-- ============================= -->
+
+<div class="auth-modal" id="authModal">
+
+    <div class="auth-box">
+
+        <button class="close-auth" id="closeAuth">&times;</button>
+
+        <!-- LOGIN -->
+        <div id="loginSection">
+
+            <h2>Log in to Spotify</h2>
+
+            <form id="loginForm">
+
+                <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="Email"
+                    required
+                >
+
+                <input
+                    type="password"
+                    id="loginPassword"
+                    placeholder="Password"
+                    required
+                >
+
+                <button type="submit" class="auth-button">
+                    Log In
+                </button>
+
+            </form>
+
+            <p>
+                Don't have an account?
+                <button id="showRegister" class="switch-auth">
+                    Sign up
+                </button>
+            </p>
+
+        </div>
+
+
+        <!-- REGISTER -->
+
+        <div id="registerSection" style="display: none;">
+
+            <h2>Create your Spotify account</h2>
+
+            <form id="registerForm">
+
+                <input
+                    type="text"
+                    id="registerName"
+                    placeholder="Name"
+                    required
+                >
+
+                <input
+                    type="email"
+                    id="registerEmail"
+                    placeholder="Email"
+                    required
+                >
+
+                <input
+                    type="password"
+                    id="registerPassword"
+                    placeholder="Password"
+                    required
+                >
+
+                <button type="submit" class="auth-button">
+                    Sign Up
+                </button>
+
+            </form>
+
+            <p>
+                Already have an account?
+                <button id="showLogin" class="switch-auth">
+                    Log in
+                </button>
+            </p>
+
+        </div>
+
+        <p id="authMessage"></p>
+
+    </div>
+
+</div>
+
+<!-- ========================================
+     ADD TO PLAYLIST MODAL
+======================================== -->
+
+<div id="playlistModal" class="playlist-modal">
+
+    <div class="playlist-modal-content">
+
+        <div class="playlist-modal-header">
+            <h2>Add to playlist</h2>
+
+            <button id="closePlaylistModal" class="close-playlist-modal">
+                &times;
+            </button>
+        </div>
+
+        <div id="playlistSelectionList" class="playlist-selection-list">
+            <!-- Playlists will appear here -->
+        </div>
+
+    </div>
+
+</div>
+<!-- ===========================
+     SEARCH MODAL
+=========================== -->
+
+<div id="searchModal" class="playlist-modal">
+
+    <div class="playlist-modal-content">
+
+        <div class="playlist-modal-header">
+            <h2>Search Songs</h2>
+
+            <button id="closeSearchModal"
+                    class="close-playlist-modal">
+                &times;
+            </button>
+        </div>
+
+        <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="Search songs, artists, albums..."
+            autocomplete="off"
+    >
+
+        <div id="searchResults"></div>
+
+    </div>
+
+</div>
+
+<!-- QUEUE PANEL -->
+<div id="queuePanel" class="queue-panel">
+
+    <div class="queue-header">
+        <h2>Queue</h2>
+
+        <button id="closeQueueBtn" class="close-queue-btn">
+            ×
+        </button>
+    </div>
+
+    <div id="queueList" class="queue-list">
+        <!-- Songs will appear here -->
+    </div>
+
+</div>
+<script src="script.js"></script>
+</body>
+</html>
