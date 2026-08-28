@@ -13,6 +13,8 @@ const showRegister = document.getElementById("showRegister");
 const showLogin = document.getElementById("showLogin");
 const likeBtn = document.getElementById("likeBtn");
 
+const API_BASE_URL = "https://spotify-clone-vgxl.onrender.com";
+
 
 // ========================================
 // PLAYLIST MODAL
@@ -87,21 +89,19 @@ registerForm.addEventListener("submit", async (event) => {
     try {
 
         const response = await fetch(
-            "http://localhost:5000/api/auth/register",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify({
-                    name: name,
-                    email: email,
-                    password: password
-                })
-            }
-        );
+    `${API_BASE_URL}/api/auth/register`,
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: name,
+            email: email,
+            password: password
+        })
+    }
+);
 
         const data = await response.json();
 
@@ -156,21 +156,18 @@ loginForm.addEventListener("submit", async (event) => {
     try {
 
         const response = await fetch(
-            "http://localhost:5000/api/auth/login",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
-            }
-        );
-
+    `${API_BASE_URL}/api/auth/login`,
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            email: email,
+            password: password
+        })
+    }
+    );
         const data = await response.json();
 
         if (!response.ok) {
@@ -267,14 +264,14 @@ async function loadPlaylists() {
     try {
 
         const response = await fetch(
-            "http://localhost:5000/api/playlists",
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
+    `${API_BASE_URL}/api/playlists`,
+    {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
 
         const data = await response.json();
 
@@ -392,16 +389,15 @@ function displayPlaylists(playlists) {
             try {
 
                 const response = await fetch(
-                    `http://localhost:5000/api/playlists/${playlist._id}`,
-                    {
-                        method: "DELETE",
-
-                        headers: {
-                            Authorization:
-                                `Bearer ${token}`
-                        }
-                    }
-                );
+    `${API_BASE_URL}/api/playlists/${playlist._id}`,
+    {
+        method: "DELETE",
+        headers: {
+            Authorization:
+                `Bearer ${token}`
+        }
+    }
+);
 
                 const data =
                     await response.json();
@@ -494,22 +490,19 @@ createPlaylistBtn.addEventListener("click", async () => {
     try {
 
         const response = await fetch(
-            "http://localhost:5000/api/playlists",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-
-                body: JSON.stringify({
-                    name: playlistName.trim(),
-                    description: ""
-                })
-            }
-        );
-
+    `${API_BASE_URL}/api/playlists`,
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            name: playlistName.trim(),
+            description: ""
+        })
+    }
+);
 
         const data = await response.json();
 
@@ -554,22 +547,20 @@ createPlaylistBtn.addEventListener("click", async () => {
 async function loadSongs() {
 
     try {
+    const response = await fetch(
+        `${API_BASE_URL}/api/songs`
+    );
 
-        const response = await fetch(
-            "http://localhost:5000/api/songs"
-        );
+    const data = await response.json();
 
-        const data = await response.json();
+    if (!response.ok) {
+        console.error(data.message);
+        return;
+    }
 
-        if (!response.ok) {
-            console.error(data.message);
-            return;
-        }
-
-        songsList = data.songs;
-        displaySongs(songsList);
-
-    } catch (error) {
+    songsList = data.songs;
+    displaySongs(songsList);
+} catch (error) {
 
         console.error("Error loading songs:", error);
 
@@ -660,9 +651,77 @@ const recentlyPlayedKey = currentUser
     ? `recentlyPlayed_${currentUser.id}`
     : "recentlyPlayed_guest";
 
-let recentlyPlayed = JSON.parse(
-    localStorage.getItem(recentlyPlayedKey) || "[]"
-);
+function isValidRecentlyPlayedSong(song) {
+
+    return Boolean(
+        song &&
+        typeof song === "object" &&
+        typeof song._id === "string" &&
+        song._id.trim() &&
+        typeof song.title === "string" &&
+        song.title.trim() &&
+        typeof song.artist === "string" &&
+        song.artist.trim() &&
+        typeof song.audioUrl === "string" &&
+        song.audioUrl.trim()
+    );
+}
+
+function getRecentlyPlayedSong(song) {
+
+    if (!isValidRecentlyPlayedSong(song)) {
+        return null;
+    }
+
+    // Save only the fields the history card and player need. This prevents
+    // partial objects from older versions from being kept in localStorage.
+    return {
+        _id: song._id,
+        title: song.title,
+        artist: song.artist,
+        album: typeof song.album === "string" ? song.album : "",
+        coverImage: typeof song.coverImage === "string" ? song.coverImage : "",
+        audioUrl: song.audioUrl
+    };
+}
+
+function loadRecentlyPlayed() {
+
+    let savedRecentlyPlayed = [];
+
+    try {
+        const savedValue = localStorage.getItem(recentlyPlayedKey);
+        savedRecentlyPlayed = savedValue ? JSON.parse(savedValue) : [];
+    } catch (error) {
+        console.warn("Removing unreadable recently played history.", error);
+    }
+
+    const seenSongIds = new Set();
+    const cleanedRecentlyPlayed = Array.isArray(savedRecentlyPlayed)
+        ? savedRecentlyPlayed.reduce((songs, song) => {
+            const validSong = getRecentlyPlayedSong(song);
+
+            if (validSong && !seenSongIds.has(validSong._id)) {
+                seenSongIds.add(validSong._id);
+                songs.push(validSong);
+            }
+
+            return songs;
+        }, []).slice(0, 10)
+        : [];
+
+    // Persist the cleaned history so stale malformed cards are removed once.
+    if (JSON.stringify(cleanedRecentlyPlayed) !== JSON.stringify(savedRecentlyPlayed)) {
+        localStorage.setItem(
+            recentlyPlayedKey,
+            JSON.stringify(cleanedRecentlyPlayed)
+        );
+    }
+
+    return cleanedRecentlyPlayed;
+}
+
+let recentlyPlayed = loadRecentlyPlayed();
 
 // ========================================
 // PLAY SONG
@@ -737,25 +796,21 @@ async function updateLikeButton() {
 
     try {
 
-        const response =
-            await fetch(
-                `http://localhost:5000/api/likes/${currentSong._id}?userId=${user.id}`
-            );
+       const response =
+    await fetch(
+        `${API_BASE_URL}/api/likes/${currentSong._id}?userId=${user.id}`
+    );
 
-        const data =
-            await response.json();
+const data =
+    await response.json();
 
-        if (data.liked) {
-
-            likeBtn.textContent = "♥";
-            likeBtn.classList.add("active");
-
-        } else {
-
-            likeBtn.textContent = "♡";
-            likeBtn.classList.remove("active");
-
-        }
+if (data.liked) {
+    likeBtn.textContent = "♥";
+    likeBtn.classList.add("active");
+} else {
+    likeBtn.textContent = "♡";
+    likeBtn.classList.remove("active");
+}
 
     } catch (error) {
 
@@ -1000,14 +1055,14 @@ async function loadPlaylists() {
     try {
 
         const response = await fetch(
-            "http://localhost:5000/api/playlists",
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
+    `${API_BASE_URL}/api/playlists`,
+    {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
 
         const data = await response.json();
 
@@ -1118,17 +1173,17 @@ function displayPlaylists(playlists) {
     try {
 
         const response =
-            await fetch(
-                `http://localhost:5000/api/likes?userId=${user.id}`
-            );
+    await fetch(
+        `${API_BASE_URL}/api/likes?userId=${user.id}`
+    );
 
-        const data =
-            await response.json();
+const data =
+    await response.json();
 
-        if (!response.ok) {
-            countElement.textContent = "0 songs";
-            return;
-        }
+if (!response.ok) {
+    countElement.textContent = "0 songs";
+    return;
+}
 
         const count =
             data.likedSongs
@@ -1256,17 +1311,16 @@ function displayPlaylists(playlists) {
                 try {
 
                     const response =
-                        await fetch(
-                            `http://localhost:5000/api/playlists/${playlist._id}`,
-                            {
-                                method: "DELETE",
-
-                                headers: {
-                                    Authorization:
-                                        `Bearer ${token}`
-                                }
-                            }
-                        );
+    await fetch(
+        `${API_BASE_URL}/api/playlists/${playlist._id}`,
+        {
+            method: "DELETE",
+            headers: {
+                Authorization:
+                    `Bearer ${token}`
+            }
+        }
+    );
 
 
                     const data =
@@ -1340,22 +1394,20 @@ async function openLikedSongs() {
     try {
 
         const response =
-            await fetch(
-                `http://localhost:5000/api/likes?userId=${user.id}`
-            );
+    await fetch(
+        `${API_BASE_URL}/api/likes?userId=${user.id}`
+    );
 
-        const data =
-            await response.json();
+const data =
+    await response.json();
 
-        if (!response.ok) {
-
-            console.error(
-                "❌ Failed to load liked songs:",
-                data
-            );
-
-            return;
-        }
+if (!response.ok) {
+    console.error(
+        "❌ Failed to load liked songs:",
+        data
+    );
+    return;
+}
 
         // Store liked songs
         songsList =
@@ -1538,16 +1590,15 @@ if (openedPlaylistDeleteBtn) {
             try {
 
                 const response = await fetch(
-                    `http://localhost:5000/api/playlists/${playlist._id}`,
-                    {
-                        method: "DELETE",
-
-                        headers: {
-                            Authorization:
-                                `Bearer ${token}`
-                        }
-                    }
-                );
+    `${API_BASE_URL}/api/playlists/${playlist._id}`,
+    {
+        method: "DELETE",
+        headers: {
+            Authorization:
+                `Bearer ${token}`
+        }
+    }
+);
 
                 const data =
                     await response.json();
@@ -1751,20 +1802,18 @@ if (editPlaylistBtn) {
         try {
 
             const response = await fetch(
-                `http://localhost:5000/api/playlists/${playlist._id}`,
-                {
-                    method: "PUT",
-
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`
-                    },
-
-                    body: JSON.stringify({
-                        name: trimmedName
-                    })
-                }
-            );
+    `${API_BASE_URL}/api/playlists/${playlist._id}`,
+    {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            name: trimmedName
+        })
+    }
+);
 
             const data = await response.json();
 
@@ -1896,16 +1945,15 @@ if (!playlist.songs || playlist.songs.length === 0) {
 
         try {
 
-            const response = await fetch(
-                `http://localhost:5000/api/playlists/${playlist._id}/songs/${song._id}`,
-                {
-                    method: "DELETE",
-
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
+           const response = await fetch(
+    `${API_BASE_URL}/api/playlists/${playlist._id}/songs/${song._id}`,
+    {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
 
             const data = await response.json();
 
@@ -1917,14 +1965,14 @@ if (!playlist.songs || playlist.songs.length === 0) {
             alert("✅ Song removed from playlist");
 
             // Reload playlists
-            const updatedResponse = await fetch(
-                "http://localhost:5000/api/playlists",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
+const updatedResponse = await fetch(
+    `${API_BASE_URL}/api/playlists`,
+    {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
 
             const updatedData =
                 await updatedResponse.json();
@@ -2001,15 +2049,14 @@ async function showPlaylistSelector(song) {
     try {
 
         const response = await fetch(
-            "http://localhost:5000/api/playlists",
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
-
+    `${API_BASE_URL}/api/playlists`,
+    {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
         const data = await response.json();
 
         console.log("Playlist API response:", data);
@@ -2101,15 +2148,14 @@ async function addSongToPlaylist(
     try {
 
         const response = await fetch(
-            `http://localhost:5000/api/playlists/${playlistId}/songs/${songId}`,
-            {
-                method: "POST",
-
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
+    `${API_BASE_URL}/api/playlists/${playlistId}/songs/${songId}`,
+    {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
 
         const data = await response.json();
 
@@ -2132,14 +2178,14 @@ async function addSongToPlaylist(
         loadPlaylists();
 
         // Reload currently opened playlist
-        const updatedPlaylists = await fetch(
-            "http://localhost:5000/api/playlists",
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
+const updatedPlaylists = await fetch(
+    `${API_BASE_URL}/api/playlists`,
+    {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
 
         const updatedData = await updatedPlaylists.json();
 
@@ -2171,15 +2217,14 @@ async function removeSongFromPlaylist(
     try {
 
         const response = await fetch(
-            `http://localhost:5000/api/playlists/${playlistId}/songs/${songId}`,
-            {
-                method: "DELETE",
-
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
+    `${API_BASE_URL}/api/playlists/${playlistId}/songs/${songId}`,
+    {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
 
         const data = await response.json();
 
@@ -2199,14 +2244,14 @@ async function removeSongFromPlaylist(
         await loadPlaylists();
 
         // Reload current playlist
-        const updatedResponse = await fetch(
-            "http://localhost:5000/api/playlists",
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
+const updatedResponse = await fetch(
+    `${API_BASE_URL}/api/playlists`,
+    {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+);
 
         const updatedData =
             await updatedResponse.json();
@@ -2297,16 +2342,16 @@ searchInput.addEventListener("input", async () => {
     try {
 
         const response = await fetch(
-            `http://localhost:5000/api/search?q=${encodeURIComponent(query)}`
-        );
+    `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`
+);
 
-        const data = await response.json();
+const data = await response.json();
 
-        if (!response.ok) {
-            searchResults.innerHTML =
-                "<p>Search failed.</p>";
-            return;
-        }
+if (!response.ok) {
+    searchResults.innerHTML =
+        "<p>Search failed.</p>";
+    return;
+}
 
         displaySearchResults(data.songs);
 
@@ -2433,20 +2478,20 @@ async function loadHomeSongs() {
     try {
 
         const response = await fetch(
-            "http://localhost:5000/api/songs"
-        );
+    `${API_BASE_URL}/api/songs`
+);
 
-        const data = await response.json();
+const data = await response.json();
 
-        console.log("Home songs API response:", data);
+console.log("Home songs API response:", data);
 
-        if (!response.ok) {
-            console.error(
-                "Songs API error:",
-                data.message
-            );
-            return;
-        }
+if (!response.ok) {
+    console.error(
+        "Songs API error:",
+        data.message
+    );
+    return;
+}
 
         displayHomeSongs(data.songs);
 
@@ -3020,21 +3065,19 @@ likeBtn.addEventListener("click", async () => {
 
     try {
 
-        const response =
-            await fetch(
-                `http://localhost:5000/api/likes/${currentSong._id}`,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-
-                    body: JSON.stringify({
-                        userId: user.id
-                    })
-                }
-            );
+       const response =
+    await fetch(
+        `${API_BASE_URL}/api/likes/${currentSong._id}`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                userId: user.id
+            })
+        }
+    );
 
 
         const data =
@@ -3119,17 +3162,20 @@ if (data.liked) {
 
 function addToRecentlyPlayed(song) {
 
-    if (!song) {
+    const validSong = getRecentlyPlayedSong(song);
+
+    if (!validSong) {
+        console.warn("Skipped invalid song in recently played history.");
         return;
     }
 
     // Remove duplicate if song was already played
     recentlyPlayed = recentlyPlayed.filter(
-        s => s._id !== song._id
+        savedSong => savedSong._id !== validSong._id
     );
 
     // Put latest song at the beginning
-    recentlyPlayed.unshift(song);
+    recentlyPlayed.unshift(validSong);
 
     // Keep only the latest 10 songs
     recentlyPlayed = recentlyPlayed.slice(0, 10);
@@ -3153,6 +3199,18 @@ function renderRecentlyPlayed() {
     }
 
     recentContainer.innerHTML = "";
+
+    const validRecentlyPlayed = recentlyPlayed.filter(
+        isValidRecentlyPlayedSong
+    );
+
+    if (validRecentlyPlayed.length !== recentlyPlayed.length) {
+        recentlyPlayed = validRecentlyPlayed;
+        localStorage.setItem(
+            recentlyPlayedKey,
+            JSON.stringify(recentlyPlayed)
+        );
+    }
 
     recentlyPlayed.forEach(song => {
 
