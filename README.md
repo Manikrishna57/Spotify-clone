@@ -9,8 +9,7 @@ The application provides music playback, user authentication, playlist managemen
 ## 🚀 Live Demo
 
 ### Frontend
-Add your frontend deployment URL here if you deploy the frontend.
-
+https://spotify-clone-frontend-tgcr.onrender.com
 ### Backend API
 https://spotify-clone-vgxl.onrender.com
 
